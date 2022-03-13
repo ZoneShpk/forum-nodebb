@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "คุยกับ",
-    "chat.placeholder": "พิมพ์ข้อความแชทที่นี่ กด enter เพื่อส่ง",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "You are looking at older messages, click here to go to most recent message.",
     "chat.send": "ส่ง",
     "chat.no_active": "คุณไม่มีแชทที่คุยอยู่",
@@ -68,6 +68,8 @@
     "bootbox.ok": "ตกลง",
     "bootbox.cancel": "ยกเลิก",
     "bootbox.confirm": "ยืนยัน",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "ตำแหน่งภาพหน้าปก",
     "cover.dragging_message": "ลากภาพหน้าปกเพื่อเลือกตำแหน่งแล้วกด \"บันทึก\"",
     "cover.saved": "ภาพหน้าปกและตำแหน่งได้รับการบันทึกแล้ว",

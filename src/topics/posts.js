@@ -20,13 +20,78 @@ module.exports = function (Topics) {
 		await Topics.addPostToTopic(postData.tid, postData);
 	};
 
-	Topics.getTopicPosts = async function (tid, set, start, stop, uid, reverse) {
-		const postData = await posts.getPostsFromSet(set, start, stop, uid, reverse);
-		Topics.calculatePostIndices(postData, start);
+	Topics.getTopicPosts = async function (topicData, set, start, stop, uid, reverse) {
+		if (!topicData) {
+			return [];
+		}
 
-		await Topics.addNextPostTimestamp(postData, set, reverse);
-		return await Topics.addPostData(postData, uid);
+		let repliesStart = start;
+		let repliesStop = stop;
+		if (stop > 0) {
+			repliesStop -= 1;
+			if (start > 0) {
+				repliesStart -= 1;
+			}
+		}
+		let pids = [];
+		if (start !== 0 || stop !== 0) {
+			pids = await posts.getPidsFromSet(set, repliesStart, repliesStop, reverse);
+		}
+		if (!pids.length && !topicData.mainPid) {
+			return [];
+		}
+
+		if (topicData.mainPid && start === 0) {
+			pids.unshift(topicData.mainPid);
+		}
+		let postData = await posts.getPostsByPids(pids, uid);
+		if (!postData.length) {
+			return [];
+		}
+		let replies = postData;
+		if (topicData.mainPid && start === 0) {
+			postData[0].index = 0;
+			replies = postData.slice(1);
+		}
+
+		Topics.calculatePostIndices(replies, repliesStart);
+		postData = await user.blocks.filter(uid, postData);
+		await addEventStartEnd(postData, set, reverse, topicData);
+		const result = await plugins.hooks.fire('filter:topic.getPosts', {
+			topic: topicData,
+			uid: uid,
+			posts: await Topics.addPostData(postData, uid),
+		});
+		return result.posts;
 	};
+
+	async function addEventStartEnd(postData, set, reverse, topicData) {
+		if (!postData.length) {
+			return;
+		}
+		postData.forEach((p, index) => {
+			if (p && p.index === 0 && reverse) {
+				p.eventStart = topicData.lastposttime;
+				p.eventEnd = Date.now();
+			} else if (p && postData[index + 1]) {
+				p.eventStart = reverse ? postData[index + 1].timestamp : p.timestamp;
+				p.eventEnd = reverse ? p.timestamp : postData[index + 1].timestamp;
+			}
+		});
+		const lastPost = postData[postData.length - 1];
+		if (lastPost) {
+			lastPost.eventStart = reverse ? topicData.timestamp : lastPost.timestamp;
+			lastPost.eventEnd = reverse ? lastPost.timestamp : Date.now();
+			if (lastPost.index) {
+				const nextPost = await db[reverse ? 'getSortedSetRevRangeWithScores' : 'getSortedSetRangeWithScores'](set, lastPost.index, lastPost.index);
+				if (reverse) {
+					lastPost.eventStart = nextPost.length ? nextPost[0].score : lastPost.eventStart;
+				} else {
+					lastPost.eventEnd = nextPost.length ? nextPost[0].score : lastPost.eventEnd;
+				}
+			}
+		}
+	}
 
 	Topics.addPostData = async function (postData, uid) {
 		if (!Array.isArray(postData) || !postData.length) {
@@ -305,19 +370,19 @@ module.exports = function (Topics) {
 		}
 
 		const { pid, uid, tid } = postData;
-		let add = matches.map(match => match[1]);
+		let add = _.uniq(matches.map(match => match[1]).map(tid => parseInt(tid, 10)));
 
 		const now = Date.now();
 		const topicsExist = await Topics.exists(add);
 		const current = (await db.getSortedSetMembers(`pid:${pid}:backlinks`)).map(tid => parseInt(tid, 10));
 		const remove = current.filter(tid => !add.includes(tid));
-		add = add.filter((_tid, idx) => topicsExist[idx] && !current.includes(_tid) && tid !== parseInt(_tid, 10));
+		add = add.filter((_tid, idx) => topicsExist[idx] && !current.includes(_tid) && tid !== _tid);
 
 		// Remove old backlinks
 		await db.sortedSetRemove(`pid:${pid}:backlinks`, remove);
 
 		// Add new backlinks
-		await db.sortedSetAdd(`pid:${pid}:backlinks`, add.map(Number.bind(null, now)), add);
+		await db.sortedSetAdd(`pid:${pid}:backlinks`, add.map(() => now), add);
 		await Promise.all(add.map(async (tid) => {
 			await Topics.events.log(tid, {
 				uid,

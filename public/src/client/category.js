@@ -8,7 +8,8 @@ define('forum/category', [
 	'sort',
 	'categorySelector',
 	'hooks',
-], function (infinitescroll, share, navigator, topicList, sort, categorySelector, hooks) {
+	'alerts',
+], function (infinitescroll, share, navigator, topicList, sort, categorySelector, hooks, alerts) {
 	const Category = {};
 
 	$(window).on('action:ajaxify.start', function (ev, data) {
@@ -18,7 +19,7 @@ define('forum/category', [
 	});
 
 	Category.init = function () {
-		const	cid = ajaxify.data.cid;
+		const cid = ajaxify.data.cid;
 
 		app.enterRoom('category_' + cid);
 
@@ -69,7 +70,7 @@ define('forum/category', [
 
 			socket.emit('categories.setWatchState', { cid: cid, state: state }, function (err) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
 
 				$('[component="category/watching/menu"]').toggleClass('hidden', state !== 'watching');
@@ -81,7 +82,7 @@ define('forum/category', [
 				$('[component="category/ignoring/menu"]').toggleClass('hidden', state !== 'ignoring');
 				$('[component="category/ignoring/check"]').toggleClass('fa-check', state === 'ignoring');
 
-				app.alertSuccess('[[category:' + state + '.message]]');
+				alerts.success('[[category:' + state + '.message]]');
 			});
 		});
 	}
@@ -94,7 +95,7 @@ define('forum/category', [
 				start: ajaxify.data.nextSubCategoryStart,
 			}, function (err, data) {
 				if (err) {
-					return app.alertError(err);
+					return alerts.error(err);
 				}
 				btn.toggleClass('hidden', !data.length || data.length < ajaxify.data.subCategoriesPerPage);
 				if (!data.length) {
@@ -122,7 +123,7 @@ define('forum/category', [
 	Category.toBottom = function () {
 		socket.emit('categories.getTopicCount', ajaxify.data.cid, function (err, count) {
 			if (err) {
-				return app.alertError(err.message);
+				return alerts.error(err);
 			}
 
 			navigator.scrollBottom(count - 1);
@@ -136,7 +137,7 @@ define('forum/category', [
 	function loadTopicsAfter(after, direction, callback) {
 		callback = callback || function () {};
 
-		hooks.fire('action:category.loading');
+		hooks.fire('action:topics.loading');
 		const params = utils.params();
 		infinitescroll.loadMore('categories.loadMore', {
 			cid: ajaxify.data.cid,
@@ -145,7 +146,7 @@ define('forum/category', [
 			query: params,
 			categoryTopicSort: config.categoryTopicSort,
 		}, function (data, done) {
-			hooks.fire('action:category.loaded');
+			hooks.fire('action:topics.loaded', { topics: data.topics });
 			callback(data, done);
 		});
 	}

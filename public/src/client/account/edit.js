@@ -7,7 +7,8 @@ define('forum/account/edit', [
 	'api',
 	'hooks',
 	'bootbox',
-], function (header, picture, translator, api, hooks, bootbox) {
+	'alerts',
+], function (header, picture, translator, api, hooks, bootbox, alerts) {
 	const AccountEdit = {};
 
 	AccountEdit.init = function () {
@@ -24,6 +25,10 @@ define('forum/account/edit', [
 			});
 		});
 
+		if (ajaxify.data.groupTitleArray.length === 1 && ajaxify.data.groupTitleArray[0] === '') {
+			$('#groupTitle option[value=""]').attr('selected', true);
+		}
+
 		handleImageChange();
 		handleAccountDelete();
 		handleEmailConfirm();
@@ -35,6 +40,7 @@ define('forum/account/edit', [
 	function updateProfile() {
 		const userData = $('form[component="profile/edit/form"]').serializeObject();
 		userData.uid = ajaxify.data.uid;
+		userData.groupTitle = userData.groupTitle || '';
 		userData.groupTitle = JSON.stringify(
 			Array.isArray(userData.groupTitle) ? userData.groupTitle : [userData.groupTitle]
 		);
@@ -42,14 +48,14 @@ define('forum/account/edit', [
 		hooks.fire('action:profile.update', userData);
 
 		api.put('/users/' + userData.uid, userData).then((res) => {
-			app.alertSuccess('[[user:profile_update_success]]');
+			alerts.success('[[user:profile_update_success]]');
 
 			if (res.picture) {
 				$('#user-current-picture').attr('src', res.picture);
 			}
 
 			picture.updateHeader(res.picture);
-		}).catch(app.alertError);
+		}).catch(alerts.error);
 
 		return false;
 	}
@@ -85,7 +91,7 @@ define('forum/account/edit', [
 
 						if (err) {
 							restoreButton();
-							return app.alertError(err.message);
+							return alerts.error(err);
 						}
 
 						confirmBtn.html('<i class="fa fa-check"></i>');
@@ -111,9 +117,9 @@ define('forum/account/edit', [
 			socket.emit('user.emailConfirm', {}, function (err) {
 				btn.removeAttr('disabled');
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
-				app.alertSuccess('[[notifications:email-confirm-sent]]');
+				alerts.success('[[notifications:email-confirm-sent]]');
 			});
 		});
 	}

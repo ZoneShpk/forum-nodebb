@@ -60,6 +60,7 @@ module.exports = function (Posts) {
 			deletePostFromUsersVotes(pid),
 			deletePostFromReplies(postData),
 			deletePostFromGroups(postData),
+			deletePostDiffs(pid),
 			db.sortedSetsRemove(['posts:pid', 'posts:votes', 'posts:flagged'], pid),
 			Posts.uploads.dissociateAll(pid),
 		]);
@@ -84,7 +85,7 @@ module.exports = function (Posts) {
 			topics.updateTeaser(postData.tid),
 			topics.updateLastPostTimeFromLastPid(postData.tid),
 			db.sortedSetIncrBy(`tid:${postData.tid}:posters`, -1, postData.uid),
-			user.incrementUserPostCountBy(postData.uid, -1),
+			user.updatePostCount(postData.uid),
 			notifications.rescind(`new_post:tid:${postData.tid}:pid:${postData.pid}:uid:${postData.uid}`),
 		];
 
@@ -143,5 +144,13 @@ module.exports = function (Posts) {
 		const groupNames = await groups.getUserGroupMembership('groups:visible:createtime', [postData.uid]);
 		const keys = groupNames[0].map(groupName => `group:${groupName}:member:pids`);
 		await db.sortedSetsRemove(keys, postData.pid);
+	}
+
+	async function deletePostDiffs(pid) {
+		const timestamps = await Posts.diffs.list(pid);
+		await db.deleteAll([
+			`post:${pid}:diffs`,
+			...timestamps.map(t => `diff:${pid}.${t}`),
+		]);
 	}
 };

@@ -105,7 +105,7 @@
     "has_no_ignored_topics": "Este usuario no ha ignorado ningún tema aun.",
     "has_no_upvoted_posts": "Este usuario todavía no ha votado ninguna publicación positivamente.",
     "has_no_downvoted_posts": "Este usuario todavía no ha votado ninguna publicación negativamente.",
-    "has_no_voted_posts": "Este usuario no ha votado ninguna publicación",
+    "has_no_controversial_posts": "This user does not have any downvoted posts yet.",
     "has_no_blocks": "No tienes usuarios bloqueados.",
     "email_hidden": "Correo electrónico oculto",
     "hidden": "oculto",
@@ -184,6 +184,7 @@
     "consent.export_posts": "Exportar Entradas y Respuestas (.csv)",
     "consent.export-posts-success": "Exporting posts, you will get a notification when it is complete.",
     "emailUpdate.intro": "Please enter your email address below. This forum uses your email address for scheduled digest and notifications, as well as for account recovery in the event of a lost password.",
-    "emailUpdate.optional": "<strong>This field is optional</strong>. You are not obligated to provide your email address, but without a validated email, you will not be able to recover your account.",
+    "emailUpdate.optional": "<strong>This field is optional</strong>. You are not obligated to provide your email address, but without a validated email you will not be able to recover your account or login with your email.",
+    "emailUpdate.required": "<strong>This field is required</strong>.",
     "emailUpdate.change-instructions": "A confirmation email will be sent to the entered email address with a unique link. Accessing that link will confirm your ownership of the email address and it will become active on your account. At any time, you are able to update your email on file from within your account page."
 }

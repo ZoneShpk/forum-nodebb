@@ -1,8 +1,8 @@
 'use strict';
 
 
-define('admin/advanced/logs', function () {
-	const	Logs = {};
+define('admin/advanced/logs', ['alerts'], function (alerts) {
+	const Logs = {};
 
 	Logs.init = function () {
 		const logsEl = $('.logs pre');
@@ -21,7 +21,7 @@ define('admin/advanced/logs', function () {
 							logsEl.text(logs);
 							logsEl.scrollTop(logsEl.prop('scrollHeight'));
 						} else {
-							app.alertError(err.message);
+							alerts.error(err);
 						}
 					});
 					break;
@@ -29,8 +29,10 @@ define('admin/advanced/logs', function () {
 				case 'clear':
 					socket.emit('admin.logs.clear', function (err) {
 						if (!err) {
-							app.alertSuccess('[[admin/advanced/logs:clear-success]]');
+							alerts.success('[[admin/advanced/logs:clear-success]]');
 							btnEl.prev().click();
+						} else {
+							alerts.error(err);
 						}
 					});
 					break;

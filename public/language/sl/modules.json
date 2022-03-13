@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "Klepetajte z",
-    "chat.placeholder": "Sem vpišite sporočilo, nato potrdite za pošiljanje.",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "You are looking at older messages, click here to go to most recent message.",
     "chat.send": "Pošlji",
     "chat.no_active": "Ni aktivnih klepetov.",
@@ -68,6 +68,8 @@
     "bootbox.ok": "V redu",
     "bootbox.cancel": "Prekliči",
     "bootbox.confirm": "Potrdi",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "Določanje položaja naslovne fotografije",
     "cover.dragging_message": "Povleci sliko na želeni položaj in klikni \"Shrani\". ",
     "cover.saved": "Naslovna fotografija in položaj shranjena",

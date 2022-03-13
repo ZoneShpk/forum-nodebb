@@ -20,6 +20,26 @@ helpers.getCsrfToken = async (jar) => {
 	return token;
 };
 
+helpers.request = async function (method, uri, options) {
+	const ignoreMethods = ['GET', 'HEAD', 'OPTIONS'];
+	const lowercaseMethod = String(method).toLowerCase();
+	let csrf_token;
+	if (!ignoreMethods.some(method => method.toLowerCase() === lowercaseMethod)) {
+		csrf_token = await helpers.getCsrfToken(options.jar);
+	}
+
+	return new Promise((resolve, reject) => {
+		options.headers = options.headers || {};
+		if (csrf_token) {
+			options.headers['x-csrf-token'] = csrf_token;
+		}
+		request[lowercaseMethod](`${nconf.get('url')}${uri}`, options, (err, res, body) => {
+			if (err) reject(err);
+			else resolve({ res, body });
+		});
+	});
+};
+
 helpers.loginUser = function (username, password, callback) {
 	const jar = request.jar();
 
@@ -31,7 +51,7 @@ helpers.loginUser = function (username, password, callback) {
 		if (err || res.statusCode !== 200) {
 			return callback(err || new Error('[[error:invalid-response]]'));
 		}
-
+		const { csrf_token } = body;
 		request.post(`${nconf.get('url')}/login`, {
 			form: {
 				username: username,
@@ -40,13 +60,13 @@ helpers.loginUser = function (username, password, callback) {
 			json: true,
 			jar: jar,
 			headers: {
-				'x-csrf-token': body.csrf_token,
+				'x-csrf-token': csrf_token,
 			},
-		}, (err, res) => {
-			if (err || res.statusCode !== 200) {
+		}, (err, res, body) => {
+			if (err) {
 				return callback(err || new Error('[[error:invalid-response]]'));
 			}
-			callback(null, jar, body.csrf_token);
+			callback(null, { jar, res, body, csrf_token: csrf_token });
 		});
 	});
 };

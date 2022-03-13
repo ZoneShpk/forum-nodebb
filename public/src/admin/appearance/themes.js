@@ -1,7 +1,7 @@
 'use strict';
 
 
-define('admin/appearance/themes', ['bootbox', 'translator'], function (bootbox, translator) {
+define('admin/appearance/themes', ['bootbox', 'translator', 'alerts'], function (bootbox, translator, alerts) {
 	const Themes = {};
 
 	Themes.init = function () {
@@ -15,18 +15,21 @@ define('admin/appearance/themes', ['bootbox', 'translator'], function (bootbox, 
 				const cssSrc = parentEl.attr('data-css');
 				const themeId = parentEl.attr('data-theme');
 
+				if (config['theme:id'] === themeId) {
+					return;
+				}
 				socket.emit('admin.themes.set', {
 					type: themeType,
 					id: themeId,
 					src: cssSrc,
 				}, function (err) {
 					if (err) {
-						return app.alertError(err.message);
+						return alerts.error(err);
 					}
 					config['theme:id'] = themeId;
 					highlightSelectedTheme(themeId);
 
-					app.alert({
+					alerts.alert({
 						alert_id: 'admin:theme',
 						type: 'info',
 						title: '[[admin/appearance/themes:theme-changed]]',
@@ -43,6 +46,9 @@ define('admin/appearance/themes', ['bootbox', 'translator'], function (bootbox, 
 		});
 
 		$('#revert_theme').on('click', function () {
+			if (config['theme:id'] === 'nodebb-theme-persona') {
+				return;
+			}
 			bootbox.confirm('[[admin/appearance/themes:revert-confirm]]', function (confirm) {
 				if (confirm) {
 					socket.emit('admin.themes.set', {
@@ -50,10 +56,11 @@ define('admin/appearance/themes', ['bootbox', 'translator'], function (bootbox, 
 						id: 'nodebb-theme-persona',
 					}, function (err) {
 						if (err) {
-							return app.alertError(err.message);
+							return alerts.error(err);
 						}
+						config['theme:id'] = 'nodebb-theme-persona';
 						highlightSelectedTheme('nodebb-theme-persona');
-						app.alert({
+						alerts.alert({
 							alert_id: 'admin:theme',
 							type: 'success',
 							title: '[[admin/appearance/themes:theme-changed]]',
@@ -67,7 +74,7 @@ define('admin/appearance/themes', ['bootbox', 'translator'], function (bootbox, 
 
 		socket.emit('admin.themes.getInstalled', function (err, themes) {
 			if (err) {
-				return app.alertError(err.message);
+				return alerts.error(err);
 			}
 
 			const instListEl = $('#installed_themes');

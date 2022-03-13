@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "Chatear con",
-    "chat.placeholder": "Introduce tu mensaje aquí, pulsa intro para enviar",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "You are looking at older messages, click here to go to most recent message.",
     "chat.send": "Enviar",
     "chat.no_active": "No tiene conversaciones activas.",
@@ -68,6 +68,8 @@
     "bootbox.ok": "OK",
     "bootbox.cancel": "Cancelar",
     "bootbox.confirm": "Confirmar",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "Colocar la foto de portada",
     "cover.dragging_message": "Arrastra la foto de portada al lugar que quieras y haz click en \"Guardar\"",
     "cover.saved": "Imagen y posición de la foto de portada guardadas.",

@@ -1,14 +1,14 @@
 'use strict';
 
 define('chat', [
-	'components', 'taskbar', 'translator', 'hooks',	'bootbox',
-], function (components, taskbar, translator, hooks, bootbox) {
+	'components', 'taskbar', 'translator', 'hooks', 'bootbox', 'alerts', 'api',
+], function (components, taskbar, translator, hooks, bootbox, alerts, api) {
 	const module = {};
 	let newMessage = false;
 
 	module.openChat = function (roomId, uid) {
 		if (!app.user.uid) {
-			return app.alertError('[[error:not-logged-in]]');
+			return alerts.error('[[error:not-logged-in]]');
 		}
 
 		function loadAndCenter(chatModal) {
@@ -20,27 +20,24 @@ define('chat', [
 		if (module.modalExists(roomId)) {
 			loadAndCenter(module.getModal(roomId));
 		} else {
-			socket.emit('modules.chats.loadRoom', { roomId: roomId, uid: uid || app.user.uid }, function (err, roomData) {
-				if (err) {
-					return app.alertError(err.message);
-				}
+			api.get(`/chats/${roomId}`, {
+				uid: uid || app.user.uid,
+			}).then((roomData) => {
 				roomData.users = roomData.users.filter(function (user) {
 					return user && parseInt(user.uid, 10) !== parseInt(app.user.uid, 10);
 				});
 				roomData.uid = uid || app.user.uid;
 				roomData.isSelf = true;
 				module.createModal(roomData, loadAndCenter);
-			});
+			}).catch(alerts.error);
 		}
 	};
 
 	module.newChat = function (touid, callback) {
 		function createChat() {
-			socket.emit('modules.chats.newRoom', { touid: touid }, function (err, roomId) {
-				if (err) {
-					return app.alertError(err.message);
-				}
-
+			api.post(`/chats`, {
+				uids: [touid],
+			}).then(({ roomId }) => {
 				if (!ajaxify.data.template.chats) {
 					module.openChat(roomId);
 				} else {
@@ -48,20 +45,20 @@ define('chat', [
 				}
 
 				callback(null, roomId);
-			});
+			}).catch(alerts.error);
 		}
 
 		callback = callback || function () { };
 		if (!app.user.uid) {
-			return app.alertError('[[error:not-logged-in]]');
+			return alerts.error('[[error:not-logged-in]]');
 		}
 
 		if (parseInt(touid, 10) === parseInt(app.user.uid, 10)) {
-			return app.alertError('[[error:cant-chat-with-yourself]]');
+			return alerts.error('[[error:cant-chat-with-yourself]]');
 		}
 		socket.emit('modules.chats.isDnD', touid, function (err, isDnD) {
 			if (err) {
-				return app.alertError(err.message);
+				return alerts.error(err);
 			}
 			if (!isDnD) {
 				return createChat();
@@ -81,7 +78,7 @@ define('chat', [
 			after: 0,
 		}, function (err, data) {
 			if (err) {
-				return app.alertError(err.message);
+				return alerts.error(err);
 			}
 
 			const rooms = data.rooms.filter(function (room) {
@@ -112,7 +109,7 @@ define('chat', [
 					$('[component="chats/mark-all-read"]').off('click').on('click', function () {
 						socket.emit('modules.chats.markAllRead', function (err) {
 							if (err) {
-								return app.alertError(err);
+								return alerts.error(err);
 							}
 						});
 					});
@@ -130,13 +127,7 @@ define('chat', [
 		if (module.modalExists(data.roomId)) {
 			addMessageToModal(data);
 		} else if (!ajaxify.data.template.chats) {
-			socket.emit('modules.chats.loadRoom', {
-				roomId: data.roomId,
-			}, function (err, roomData) {
-				if (err) {
-					return app.alertError(err.message);
-				}
-
+			api.get(`/chats/${data.roomId}`, {}).then((roomData) => {
 				roomData.users = roomData.users.filter(function (user) {
 					return user && parseInt(user.uid, 10) !== parseInt(app.user.uid, 10);
 				});
@@ -144,7 +135,7 @@ define('chat', [
 				roomData.uid = app.user.uid;
 				roomData.isSelf = isSelf;
 				module.createModal(roomData);
-			});
+			}).catch(alerts.error);
 		}
 	};
 
@@ -205,7 +196,9 @@ define('chat', [
 
 	module.createModal = function (data, callback) {
 		callback = callback || function () {};
-		require(['scrollStop', 'forum/chats', 'forum/chats/messages'], function (scrollStop, Chats, ChatsMessages) {
+		require([
+			'scrollStop', 'forum/chats', 'forum/chats/messages',
+		], function (scrollStop, Chats, ChatsMessages) {
 			app.parseAndTranslate('chat', data, function (chatModal) {
 				if (module.modalExists(data.roomId)) {
 					return callback(module.getModal(data.roomId));
@@ -242,7 +235,7 @@ define('chat', [
 							taskbar.updateActive(uuid);
 						},
 						stop: function () {
-							chatModal.find('#chat-message-input').focus();
+							module.focusInput(chatModal);
 						},
 						distance: 10,
 						handle: '.modal-header',
@@ -306,6 +299,14 @@ define('chat', [
 
 				Chats.addCharactersLeftHandler(chatModal);
 				Chats.addIPHandler(chatModal);
+
+				Chats.addUploadHandler({
+					dragDropAreaEl: chatModal.find('.modal-content'),
+					pasteEl: chatModal,
+					uploadFormEl: chatModal.find('[component="chat/upload"]'),
+					inputEl: chatModal.find('[component="chat/input"]'),
+				});
+
 				ChatsMessages.addSocketListeners();
 
 				taskbar.push('chat', chatModal.attr('data-uuid'), {
@@ -327,7 +328,9 @@ define('chat', [
 	};
 
 	module.focusInput = function (chatModal) {
-		chatModal.find('[component="chat/input"]').focus();
+		setTimeout(function () {
+			chatModal.find('[component="chat/input"]').focus();
+		}, 20);
 	};
 
 	module.close = function (chatModal) {

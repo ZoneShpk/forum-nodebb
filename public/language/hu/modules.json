@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "Chat vele",
-    "chat.placeholder": "Ide írd be az üzenetet, majd küldéshez Enter gomb",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "Régebbi üzeneteket nézel, kattints ide a legfrissebbekhez.",
     "chat.send": "Küldés",
     "chat.no_active": "Nincs aktív csevegésed.",
@@ -68,6 +68,8 @@
     "bootbox.ok": "OK",
     "bootbox.cancel": "Mégse",
     "bootbox.confirm": "Megerősítés",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "Fedőkép pozíciója",
     "cover.dragging_message": "Húzd a fedőképet a kívánt pozícióba, majd \"Mentés\"",
     "cover.saved": "Fedőkép és annak pozíciója elmentve",

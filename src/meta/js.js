@@ -99,8 +99,10 @@ JS.scripts = {
 		'ace/mode-javascript.js': 'node_modules/ace-builds/src-min/mode-javascript.js',
 		'ace/mode-html.js': 'node_modules/ace-builds/src-min/mode-html.js',
 		'ace/theme-twilight.js': 'node_modules/ace-builds/src-min/theme-twilight.js',
+		'ace/worker-css.js': 'node_modules/ace-builds/src-min/worker-css.js',
 		'ace/worker-javascript.js': 'node_modules/ace-builds/src-min/worker-javascript.js',
 		'ace/worker-html.js': 'node_modules/ace-builds/src-min/worker-html.js',
+		'ace/ext-searchbox.js': 'node_modules/ace-builds/src-min/ext-searchbox.js',
 
 		'clipboard.js': 'node_modules/clipboard/dist/clipboard.min.js',
 		'tinycon.js': 'node_modules/tinycon/tinycon.js',
@@ -159,7 +161,6 @@ async function linkModules() {
 			fs.promises.stat(srcPath),
 			mkdirp(path.dirname(destPath)),
 		]);
-
 		if (stats.isDirectory()) {
 			await file.linkDirs(srcPath, destPath, true);
 			return;

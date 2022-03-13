@@ -9,8 +9,9 @@ define('forum/topic/postTools', [
 	'forum/topic/votes',
 	'api',
 	'bootbox',
+	'alerts',
 	'hooks',
-], function (share, navigator, components, translator, votes, api, bootbox, hooks) {
+], function (share, navigator, components, translator, votes, api, bootbox, alerts, hooks) {
 	const PostTools = {};
 
 	let staleReplyAnyway = false;
@@ -42,7 +43,7 @@ define('forum/topic/postTools', [
 
 			socket.emit('posts.loadPostTools', { pid: pid, cid: ajaxify.data.cid }, function (err, data) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
 				data.posts.display_move_tools = data.posts.display_move_tools && index !== 0;
 
@@ -208,7 +209,7 @@ define('forum/topic/postTools', [
 						msg = '[[error:' + languageKey + '-minutes, ' + numMinutes + ']]';
 					}
 				}
-				app.alertError(msg);
+				alerts.error(msg);
 				return false;
 			}
 			return true;
@@ -240,9 +241,9 @@ define('forum/topic/postTools', [
 			const ip = $(this).attr('data-ip');
 			socket.emit('blacklist.addRule', ip, function (err) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
-				app.alertSuccess('[[admin/manage/blacklist:ban-ip]]');
+				alerts.success('[[admin/manage/blacklist:ban-ip]]');
 			});
 		});
 
@@ -254,8 +255,8 @@ define('forum/topic/postTools', [
 	function onReplyClicked(button, tid) {
 		const selectedNode = getSelectedNode();
 
-		showStaleWarning(function () {
-			let username = getUserSlug(button);
+		showStaleWarning(async function () {
+			let username = await getUserSlug(button);
 			if (getData(button, 'data-uid') === '0' || !getData(button, 'data-userslug')) {
 				username = '';
 			}
@@ -287,8 +288,8 @@ define('forum/topic/postTools', [
 	function onQuoteClicked(button, tid) {
 		const selectedNode = getSelectedNode();
 
-		showStaleWarning(function () {
-			const username = getUserSlug(button);
+		showStaleWarning(async function () {
+			const username = await getUserSlug(button);
 			const toPid = getData(button, 'data-pid');
 
 			function quote(text) {
@@ -306,7 +307,7 @@ define('forum/topic/postTools', [
 			}
 			socket.emit('posts.getRawPost', toPid, function (err, post) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
 
 				quote(post);
@@ -314,7 +315,7 @@ define('forum/topic/postTools', [
 		});
 	}
 
-	function getSelectedNode() {
+	async function getSelectedNode() {
 		let selectedText = '';
 		let selectedPid;
 		let username = '';
@@ -341,7 +342,7 @@ define('forum/topic/postTools', [
 			selectedText = range.toString();
 			const postEl = $(content).parents('[component="post"]');
 			selectedPid = postEl.attr('data-pid');
-			username = getUserSlug($(content));
+			username = await getUserSlug($(content));
 			range.detach();
 		}
 		return { text: selectedText, pid: selectedPid, username: username };
@@ -352,7 +353,7 @@ define('forum/topic/postTools', [
 
 		api[method](`/posts/${pid}/bookmark`, undefined, function (err) {
 			if (err) {
-				return app.alertError(err);
+				return alerts.error(err);
 			}
 			const type = method === 'put' ? 'bookmark' : 'unbookmark';
 			hooks.fire(`action:post.${type}`, { pid: pid });
@@ -365,28 +366,33 @@ define('forum/topic/postTools', [
 	}
 
 	function getUserSlug(button) {
-		let slug = '';
-		const post = button.parents('[data-pid]');
-
-		if (button.attr('component') === 'topic/reply') {
-			return slug;
-		}
-
-		if (post.length) {
-			slug = post.attr('data-userslug');
-			if (!slug) {
-				if (post.attr('data-uid') !== '0') {
-					slug = '[[global:former_user]]';
-				} else {
-					slug = '[[global:guest]]';
-				}
+		return new Promise((resolve) => {
+			let slug = '';
+			if (button.attr('component') === 'topic/reply') {
+				resolve(slug);
+				return;
 			}
-		}
-		if (post.length && post.attr('data-uid') !== '0') {
-			slug = '@' + slug;
-		}
+			const post = button.parents('[data-pid]');
+			if (post.length) {
+				require(['slugify'], function (slugify) {
+					slug = slugify(post.attr('data-username'), true);
+					if (!slug) {
+						if (post.attr('data-uid') !== '0') {
+							slug = '[[global:former_user]]';
+						} else {
+							slug = '[[global:guest]]';
+						}
+					}
+					if (slug && slug !== '[[global:former_user]]' && slug !== '[[global:guest]]') {
+						slug = '@' + slug;
+					}
+					resolve(slug);
+				});
+				return;
+			}
 
-		return slug;
+			resolve(slug);
+		});
 	}
 
 	function togglePostDelete(button) {
@@ -414,7 +420,7 @@ define('forum/topic/postTools', [
 
 			const route = action === 'purge' ? '' : '/state';
 			const method = action === 'restore' ? 'put' : 'del';
-			api[method](`/posts/${pid}${route}`).catch(app.alertError);
+			api[method](`/posts/${pid}${route}`).catch(alerts.error);
 		});
 	}
 
@@ -464,62 +470,67 @@ define('forum/topic/postTools', [
 		warning.modal();
 	}
 
+	const selectionChangeFn = utils.debounce(selectionChange, 100);
+
 	function handleSelectionTooltip() {
 		hooks.onPage('action:posts.loaded', delayedTooltip);
 
-		$(document).off('mouseup', delayedTooltip).on('mouseup', delayedTooltip);
-		$(document).off('selectionchange', selectionChange).on('selectionchange', selectionChange);
+		$(document).off('selectionchange', selectionChangeFn).on('selectionchange', selectionChangeFn);
 	}
 
-	let selectionEmpty = true;
 	function selectionChange() {
-		selectionEmpty = window.getSelection().toString() === '';
+		const selectionEmpty = window.getSelection().toString() === '';
 		if (selectionEmpty) {
 			$('[component="selection/tooltip"]').addClass('hidden');
+		} else {
+			delayedTooltip();
 		}
 	}
 
-	function delayedTooltip() {
-		setTimeout(async function () {
-			let selectionTooltip = $('[component="selection/tooltip"]');
-			selectionTooltip.addClass('hidden');
-			const selection = window.getSelection();
-			if (selection.focusNode && selection.type === 'Range' && ajaxify.data.template.topic && !selectionEmpty) {
-				const focusNode = $(selection.focusNode);
-				const anchorNode = $(selection.anchorNode);
-				const firstPid = anchorNode.parents('[data-pid]').attr('data-pid');
-				const lastPid = focusNode.parents('[data-pid]').attr('data-pid');
-				if (firstPid !== lastPid || !focusNode.parents('[component="post/content"]').length || !anchorNode.parents('[component="post/content"]').length) {
-					return;
-				}
-				const postEl = focusNode.parents('[data-pid]');
-				const selectionRange = selection.getRangeAt(0);
-				if (!postEl.length || selectionRange.collapsed) {
-					return;
-				}
-				const rects = selectionRange.getClientRects();
-				const lastRect = rects[rects.length - 1];
+	async function delayedTooltip() {
+		let selectionTooltip = $('[component="selection/tooltip"]');
+		selectionTooltip.addClass('hidden');
+		if (selectionTooltip.attr('data-ajaxify') === '1') {
+			selectionTooltip.remove();
+			return;
+		}
 
-				if (!selectionTooltip.length) {
-					selectionTooltip = await app.parseAndTranslate('partials/topic/selection-tooltip', ajaxify.data);
-					selectionTooltip.addClass('hidden').appendTo('body');
-				}
-				selectionTooltip.off('click').on('click', '[component="selection/tooltip/quote"]', function () {
-					selectionTooltip.addClass('hidden');
-					onQuoteClicked(postEl.find('[component="post/quote"]'), ajaxify.data.tid);
-				});
-				selectionTooltip.removeClass('hidden');
-				$(window).one('action:ajaxify.start', function () {
-					selectionTooltip.remove();
-					$(document).off('selectionchange', selectionChange);
-				});
-				const tooltipWidth = selectionTooltip.outerWidth(true);
-				selectionTooltip.css({
-					top: lastRect.bottom + $(window).scrollTop(),
-					left: tooltipWidth > lastRect.width ? lastRect.left : lastRect.left + lastRect.width - tooltipWidth,
-				});
+		const selection = window.getSelection();
+		if (selection.focusNode && selection.type === 'Range' && ajaxify.data.template.topic) {
+			const focusNode = $(selection.focusNode);
+			const anchorNode = $(selection.anchorNode);
+			const firstPid = anchorNode.parents('[data-pid]').attr('data-pid');
+			const lastPid = focusNode.parents('[data-pid]').attr('data-pid');
+			if (firstPid !== lastPid || !focusNode.parents('[component="post/content"]').length || !anchorNode.parents('[component="post/content"]').length) {
+				return;
 			}
-		}, 0);
+			const postEl = focusNode.parents('[data-pid]');
+			const selectionRange = selection.getRangeAt(0);
+			if (!postEl.length || selectionRange.collapsed) {
+				return;
+			}
+			const rects = selectionRange.getClientRects();
+			const lastRect = rects[rects.length - 1];
+
+			if (!selectionTooltip.length) {
+				selectionTooltip = await app.parseAndTranslate('partials/topic/selection-tooltip', ajaxify.data);
+				selectionTooltip.addClass('hidden').appendTo('body');
+			}
+			selectionTooltip.off('click').on('click', '[component="selection/tooltip/quote"]', function () {
+				selectionTooltip.addClass('hidden');
+				onQuoteClicked(postEl.find('[component="post/quote"]'), ajaxify.data.tid);
+			});
+			selectionTooltip.removeClass('hidden');
+			$(window).one('action:ajaxify.start', function () {
+				selectionTooltip.attr('data-ajaxify', 1).addClass('hidden');
+				$(document).off('selectionchange', selectionChangeFn);
+			});
+			const tooltipWidth = selectionTooltip.outerWidth(true);
+			selectionTooltip.css({
+				top: lastRect.bottom + $(window).scrollTop(),
+				left: tooltipWidth > lastRect.width ? lastRect.left : lastRect.left + lastRect.width - tooltipWidth,
+			});
+		}
 	}
 
 	return PostTools;

@@ -105,7 +105,7 @@
     "has_no_ignored_topics": "Cet utilisateur n'a encore ignoré aucun sujet.",
     "has_no_upvoted_posts": "Cet utilisateur n'a donné d'avis positifs",
     "has_no_downvoted_posts": "Cet utilisateur n'a pas donné d'avis négatifs",
-    "has_no_voted_posts": "Personne n'a voté pour des messages de cet utilisateur",
+    "has_no_controversial_posts": "This user does not have any downvoted posts yet.",
     "has_no_blocks": "Vous n'avez bloqué aucun utilisateur.",
     "email_hidden": "Email masqué",
     "hidden": "masqué",
@@ -184,6 +184,7 @@
     "consent.export_posts": "Exporter vos messages (.csv)",
     "consent.export-posts-success": "Exportation des messages, vous recevrez une notification lorsqu'elle sera terminée.",
     "emailUpdate.intro": "Veuillez renseigner votre adresse mails. Ce forum utilise votre adresse mail pour suivre l'activité et les notifications programmés, ainsi que pour la récupération de compte en cas de perte de mot de passe.",
-    "emailUpdate.optional": "<strong>Ce champ est facultatif</strong>. Vous n'êtes pas obligé de fournir votre adresse mail, mais sans mail validé, vous ne pourrez pas récupérer votre compte.",
+    "emailUpdate.optional": "<strong>Ce champ est facultatif</strong>. Vous n'êtes pas obligé de fournir votre adresse e-mail, mais sans e-mail validé, vous ne pourrez pas récupérer votre compte ou vous connecter avec votre e-mail.",
+    "emailUpdate.required": "<strong>Ce champ est requis</strong>.",
     "emailUpdate.change-instructions": "Un mail de confirmation sera envoyé à l'adresse mail saisie avec un lien unique. L'accès à ce lien confirmera votre propriété de mail et elle deviendra active sur votre compte. À tout moment, vous pouvez mettre à jour votre mail enregistré depuis la page de votre compte."
 }

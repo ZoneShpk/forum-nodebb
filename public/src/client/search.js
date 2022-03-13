@@ -6,8 +6,9 @@ define('forum/search', [
 	'autocomplete',
 	'storage',
 	'hooks',
-], function (searchModule, autocomplete, storage, hooks) {
-	const	Search = {};
+	'alerts',
+], function (searchModule, autocomplete, storage, hooks, alerts) {
+	const Search = {};
 
 	Search.init = function () {
 		const searchQuery = $('#results').attr('data-search-query');
@@ -142,7 +143,7 @@ define('forum/search', [
 	function handleSavePreferences() {
 		$('#save-preferences').on('click', function () {
 			storage.setItem('search-preferences', JSON.stringify(getSearchDataFromDOM()));
-			app.alertSuccess('[[search:search-preferences-saved]]');
+			alerts.success('[[search:search-preferences-saved]]');
 			return false;
 		});
 
@@ -151,7 +152,7 @@ define('forum/search', [
 			const query = $('#search-input').val();
 			$('#advanced-search')[0].reset();
 			$('#search-input').val(query);
-			app.alertSuccess('[[search:search-preferences-cleared]]');
+			alerts.success('[[search:search-preferences-cleared]]');
 			return false;
 		});
 	}

@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "Chat with",
-    "chat.placeholder": "Taip pesanan di sini, tekan ENTER untuk hantar",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "You are looking at older messages, click here to go to most recent message.",
     "chat.send": "hantar",
     "chat.no_active": "Anda tiada pesanan yang aktif",
@@ -68,6 +68,8 @@
     "bootbox.ok": "Ok",
     "bootbox.cancel": "Batal",
     "bootbox.confirm": "Pasti",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "Kedudukan Gambar Muka",
     "cover.dragging_message": "Seret gambar muka ke kedudukan yang diingini dan klik \"Simpan\"",
     "cover.saved": "Gambar muka dan kedudukan disimpan",

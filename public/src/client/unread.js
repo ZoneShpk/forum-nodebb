@@ -2,8 +2,8 @@
 
 
 define('forum/unread', [
-	'topicSelect', 'components', 'topicList', 'categorySelector',
-], function (topicSelect, components, topicList, categorySelector) {
+	'topicSelect', 'components', 'topicList', 'categorySelector', 'alerts',
+], function (topicSelect, components, topicList, categorySelector, alerts) {
 	const Unread = {};
 
 	const watchStates = {
@@ -26,10 +26,10 @@ define('forum/unread', [
 		function markAllRead() {
 			socket.emit('topics.markAllRead', function (err) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
 
-				app.alertSuccess('[[unread:topics_marked_as_read.success]]');
+				alerts.success('[[unread:topics_marked_as_read.success]]');
 
 				$('[component="category"]').empty();
 				$('[component="pagination"]').addClass('hidden');
@@ -45,7 +45,7 @@ define('forum/unread', [
 			}
 			socket.emit('topics.markAsRead', tids, function (err) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
 
 				doneRemovingTids(tids);
@@ -64,13 +64,12 @@ define('forum/unread', [
 
 			socket.emit('topics.markCategoryTopicsRead', cid, function (err) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
 
 				doneRemovingTids(tids);
 			});
 		}
-
 		const selector = categorySelector.init($('[component="category-selector"]'), {
 			onSelect: function (category) {
 				selector.selectCategory(0);
@@ -101,7 +100,7 @@ define('forum/unread', [
 	function doneRemovingTids(tids) {
 		removeTids(tids);
 
-		app.alertSuccess('[[unread:topics_marked_as_read.success]]');
+		alerts.success('[[unread:topics_marked_as_read.success]]');
 
 		if (!$('[component="category"]').children().length) {
 			$('#category-no-topics').removeClass('hidden');
@@ -123,6 +122,8 @@ define('forum/unread', [
 		$('a[href="' + config.relative_path + url + '"].navigation-link i')
 			.toggleClass('unread-count', count > 0)
 			.attr('data-content', count > 99 ? '99+' : count);
+
+		$('#mobile-menu [data-unread-url="' + url + '"]').attr('data-content', count > 99 ? '99+' : count);
 	}
 
 	Unread.initUnreadTopics = function () {

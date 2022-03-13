@@ -37,7 +37,7 @@ app.flags = {};
 		 * e.g. New Topic/Reply, post tools
 		 */
 		if (document.body) {
-			let earlyQueue = [];	// once we can ES6, use Set instead
+			let earlyQueue = []; // once we can ES6, use Set instead
 			const earlyClick = function (ev) {
 				let btnEl = ev.target.closest('button');
 				const anchorEl = ev.target.closest('a');
@@ -114,7 +114,7 @@ app.flags = {};
 		});
 	};
 
-	app.require = async (modules) => {	// allows you to await require.js modules
+	app.require = async (modules) => { // allows you to await require.js modules
 		const single = !Array.isArray(modules);
 		if (single) {
 			modules = [modules];
@@ -172,7 +172,10 @@ app.flags = {};
 			}, function (err) {
 				if (err) {
 					app.currentRoom = previousRoom;
-					return app.alertError(err.message);
+					require(['alerts'], function (alerts) {
+						alerts.error(err);
+					});
+					return;
 				}
 
 				callback();
@@ -189,7 +192,9 @@ app.flags = {};
 		socket.emit('meta.rooms.leaveCurrent', function (err) {
 			if (err) {
 				app.currentRoom = previousRoom;
-				return app.alertError(err.message);
+				require(['alerts'], function (alerts) {
+					alerts.error(err);
+				});
 			}
 		});
 	};
@@ -214,12 +219,16 @@ app.flags = {};
 			return;
 		}
 		els = els || $('body');
-		els.find('.avatar,img[title].teaser-pic,img[title].user-img,div.user-icon,span.user-icon').each(function () {
-			$(this).tooltip({
-				placement: placement || $(this).attr('title-placement') || 'top',
-				title: $(this).attr('title'),
+		els.find('.avatar,img[title].teaser-pic,img[title].user-img,div.user-icon,span.user-icon').one('mouseenter', function (ev) {
+			const $this = $(this);
+			// perf: create tooltips on demand
+			$this.tooltip({
+				placement: placement || $this.attr('title-placement') || 'top',
+				title: $this.attr('title'),
 				container: '#content',
 			});
+			// this will cause the tooltip to show up
+			$this.trigger(ev);
 		});
 	};
 
@@ -234,15 +243,10 @@ app.flags = {};
 
 	app.processPage = function () {
 		highlightNavigationLink();
-
 		$('.timeago').timeago();
-
 		utils.makeNumbersHumanReadable($('.human-readable-number'));
-
 		utils.addCommasToNumbers($('.formatted-number'));
-
 		app.createUserTooltips($('#content'));
-
 		app.createStatusTooltips();
 	};
 
@@ -354,7 +358,7 @@ app.flags = {};
 
 	function registerServiceWorker() {
 		// Do not register for Safari browsers
-		if (!ajaxify.data._locals.useragent.isSafari && 'serviceWorker' in navigator) {
+		if (!config.useragent.isSafari && 'serviceWorker' in navigator) {
 			navigator.serviceWorker.register(config.relative_path + '/service-worker.js', { scope: config.relative_path + '/' })
 				.then(function () {
 					console.info('ServiceWorker registration succeeded.');

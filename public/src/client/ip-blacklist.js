@@ -1,7 +1,7 @@
 'use strict';
 
 
-define('forum/ip-blacklist', ['Chart', 'benchpress', 'bootbox'], function (Chart, Benchpress, bootbox) {
+define('forum/ip-blacklist', ['Chart', 'benchpress', 'bootbox', 'alerts'], function (Chart, Benchpress, bootbox, alerts) {
 	const Blacklist = {};
 
 	Blacklist.init = function () {
@@ -14,9 +14,9 @@ define('forum/ip-blacklist', ['Chart', 'benchpress', 'bootbox'], function (Chart
 		$('[data-action="apply"]').on('click', function () {
 			socket.emit('blacklist.save', blacklist.val(), function (err) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
-				app.alert({
+				alerts.alert({
 					type: 'success',
 					alert_id: 'blacklist-saved',
 					title: '[[ip-blacklist:alerts.applied-success]]',
@@ -29,7 +29,7 @@ define('forum/ip-blacklist', ['Chart', 'benchpress', 'bootbox'], function (Chart
 				rules: blacklist.val(),
 			}, function (err, data) {
 				if (err) {
-					return app.alertError(err.message);
+					return alerts.error(err);
 				}
 
 				Benchpress.render('admin/partials/blacklist-validate', data).then(function (html) {
@@ -43,11 +43,11 @@ define('forum/ip-blacklist', ['Chart', 'benchpress', 'bootbox'], function (Chart
 
 	Blacklist.setupAnalytics = function () {
 		const hourlyCanvas = document.getElementById('blacklist:hourly');
-		const	dailyCanvas = document.getElementById('blacklist:daily');
-		const	hourlyLabels = utils.getHoursArray().map(function (text, idx) {
+		const dailyCanvas = document.getElementById('blacklist:daily');
+		const hourlyLabels = utils.getHoursArray().map(function (text, idx) {
 			return idx % 3 ? '' : text;
 		});
-		const	dailyLabels = utils.getDaysArray().slice(-7).map(function (text, idx) {
+		const dailyLabels = utils.getDaysArray().slice(-7).map(function (text, idx) {
 			return idx % 3 ? '' : text;
 		});
 

@@ -1,8 +1,8 @@
 'use strict';
 
 
-define('forum/reset', function () {
-	const	ResetPassword = {};
+define('forum/reset', ['alerts'], function (alerts) {
+	const ResetPassword = {};
 
 	ResetPassword.init = function () {
 		const inputEl = $('#email');
@@ -13,7 +13,7 @@ define('forum/reset', function () {
 			if (inputEl.val() && inputEl.val().indexOf('@') !== -1) {
 				socket.emit('user.reset.send', inputEl.val(), function (err) {
 					if (err) {
-						return app.alertError(err.message);
+						return alerts.error(err);
 					}
 
 					errorEl.addClass('hide');

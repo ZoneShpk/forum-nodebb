@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "Konverzace s",
-    "chat.placeholder": "Konverzační zprávu napište zde, pro odeslání stiskněte klávesu Enter",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "You are looking at older messages, click here to go to most recent message.",
     "chat.send": "Odeslat",
     "chat.no_active": "Nemáte žádné aktivní konverzace.",
@@ -68,6 +68,8 @@
     "bootbox.ok": "OK",
     "bootbox.cancel": "Zrušit",
     "bootbox.confirm": "Potvrdit",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "Umístění fotografie",
     "cover.dragging_message": "Přesuňte fotku na požadovanou pozici a klikněte na „Uložit”",
     "cover.saved": "Fotografie a její umístění uloženo",

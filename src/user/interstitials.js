@@ -1,5 +1,7 @@
 'use strict';
 
+const winston = require('winston');
+
 const user = require('.');
 const db = require('../database');
 const meta = require('../meta');
@@ -24,7 +26,10 @@ Interstitials.email = async (data) => {
 
 	data.interstitials.push({
 		template: 'partials/email_update',
-		data: { email },
+		data: {
+			email,
+			requireEmailAddress: meta.config.requireEmailAddress,
+		},
 		callback: async (userData, formData) => {
 			// Validate and send email confirmation
 			if (userData.uid) {
@@ -36,7 +41,7 @@ Interstitials.email = async (data) => {
 						uid: userData.uid,
 						email: formData.email,
 						registration: false,
-						allowed: true,	// change this value to disallow
+						allowed: true, // change this value to disallow
 						error: '[[error:invalid-email]]',
 					}),
 				]);
@@ -58,6 +63,8 @@ Interstitials.email = async (data) => {
 						await user.email.sendValidationEmail(userData.uid, {
 							email: formData.email,
 							force: true,
+						}).catch((err) => {
+							winston.error(`[user.interstitials.email] Validation email failed to send\n[emailer.send] ${err.stack}`);
 						});
 						data.req.session.emailChanged = 1;
 					} else {
@@ -79,7 +86,7 @@ Interstitials.email = async (data) => {
 					uid: null,
 					email: formData.email,
 					registration: true,
-					allowed: true,	// change this value to disallow
+					allowed: true, // change this value to disallow
 					error: '[[error:invalid-email]]',
 				});
 

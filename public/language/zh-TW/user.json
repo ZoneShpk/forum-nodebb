@@ -105,7 +105,7 @@
     "has_no_ignored_topics": "此使用者尚未忽略任何主題。",
     "has_no_upvoted_posts": "此使用者還未點贊過任何貼文。",
     "has_no_downvoted_posts": "此使用者還未倒讚過任何貼文。",
-    "has_no_voted_posts": "這個使用者還未評價任何貼文",
+    "has_no_controversial_posts": "This user does not have any downvoted posts yet.",
     "has_no_blocks": "您沒有封鎖其他使用者。",
     "email_hidden": "電子信箱已隱藏",
     "hidden": "隱藏",
@@ -184,6 +184,7 @@
     "consent.export_posts": "導出貼文 (.csv)",
     "consent.export-posts-success": "Exporting posts, you will get a notification when it is complete.",
     "emailUpdate.intro": "Please enter your email address below. This forum uses your email address for scheduled digest and notifications, as well as for account recovery in the event of a lost password.",
-    "emailUpdate.optional": "<strong>This field is optional</strong>. You are not obligated to provide your email address, but without a validated email, you will not be able to recover your account.",
+    "emailUpdate.optional": "<strong>This field is optional</strong>. You are not obligated to provide your email address, but without a validated email you will not be able to recover your account or login with your email.",
+    "emailUpdate.required": "<strong>This field is required</strong>.",
     "emailUpdate.change-instructions": "A confirmation email will be sent to the entered email address with a unique link. Accessing that link will confirm your ownership of the email address and it will become active on your account. At any time, you are able to update your email on file from within your account page."
 }

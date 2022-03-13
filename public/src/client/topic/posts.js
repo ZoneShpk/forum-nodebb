@@ -183,7 +183,7 @@ define('forum/topic/posts', [
 			}
 
 			data.posts = data.posts.filter(function (post) {
-				return $('[component="post"][data-pid="' + post.pid + '"]').length === 0;
+				return post.index === -1 || $('[component="post"][data-pid="' + post.pid + '"]').length === 0;
 			});
 		}
 
@@ -206,9 +206,11 @@ define('forum/topic/posts', [
 
 		app.parseAndTranslate('topic', 'posts', Object.assign({}, ajaxify.data, data), function (html) {
 			html = html.filter(function () {
-				const pid = $(this).attr('data-pid');
-				const isPost = $(this).is('[component="post"]');
-				return !isPost || (pid && $('[component="post"][data-pid="' + pid + '"]').length === 0);
+				const $this = $(this);
+				const pid = $this.attr('data-pid');
+				const index = parseInt($this.attr('data-index'), 10);
+				const isPost = $this.is('[component="post"]');
+				return !isPost || index === -1 || (pid && $('[component="post"][data-pid="' + pid + '"]').length === 0);
 			});
 
 			if (after) {
@@ -228,7 +230,8 @@ define('forum/topic/posts', [
 				components.get('topic').append(html);
 			}
 
-			infinitescroll.removeExtra($('[component="post"]'), direction, Math.max(20, config.postsPerPage * 2));
+			const removedEls = infinitescroll.removeExtra($('[component="post"]'), direction, Math.max(20, config.postsPerPage * 2));
+			removeNecroPostMessages(removedEls);
 
 			hooks.fire('action:posts.loaded', { posts: data.posts });
 
@@ -259,7 +262,7 @@ define('forum/topic/posts', [
 
 		infinitescroll.loadMore('topics.loadMore', {
 			tid: tid,
-			after: after,
+			after: after + (direction > 0 ? 1 : 0),
 			count: config.postsPerPage,
 			direction: direction,
 			topicPostSort: config.topicPostSort,
@@ -287,21 +290,34 @@ define('forum/topic/posts', [
 	};
 
 	Posts.addTopicEvents = function (events) {
+		if (config.topicPostSort === 'most_votes') {
+			return;
+		}
 		const html = helpers.renderEvents.call(ajaxify.data, events);
 		translator.translate(html, (translated) => {
-			document.querySelector('[component="topic"]').insertAdjacentHTML('beforeend', translated);
+			if (config.topicPostSort === 'oldest_to_newest') {
+				$('[component="topic"]').append(translated);
+			} else if (config.topicPostSort === 'newest_to_oldest') {
+				const mainPost = $('[component="topic"] [component="post"][data-index="0"]');
+				if (mainPost.length) {
+					$(translated).insertAfter(mainPost);
+				} else {
+					$('[component="topic"]').prepend(translated);
+				}
+			}
+
 			$('[component="topic/event"] .timeago').timeago();
 		});
 	};
 
-	function addNecroPostMessage(callback) {
+	function addNecroPostMessage() {
 		const necroThreshold = ajaxify.data.necroThreshold * 24 * 60 * 60 * 1000;
 		if (!necroThreshold || (config.topicPostSort !== 'newest_to_oldest' && config.topicPostSort !== 'oldest_to_newest')) {
-			return callback && callback();
+			return;
 		}
 
 		const postEls = $('[component="post"]').toArray();
-		Promise.all(postEls.map(function (post) {
+		postEls.forEach(function (post) {
 			post = $(post);
 			const prev = post.prev('[component="post"]');
 			if (post.is(':has(.necro-post)') || !prev.length) {
@@ -312,36 +328,34 @@ define('forum/topic/posts', [
 			}
 
 			const diff = post.attr('data-timestamp') - prev.attr('data-timestamp');
-			return new Promise(function (resolve) {
-				if (Math.abs(diff) >= necroThreshold) {
-					const suffixAgo = $.timeago.settings.strings.suffixAgo;
-					const prefixAgo = $.timeago.settings.strings.prefixAgo;
-					const suffixFromNow = $.timeago.settings.strings.suffixFromNow;
-					const prefixFromNow = $.timeago.settings.strings.prefixFromNow;
+			if (Math.abs(diff) >= necroThreshold) {
+				const suffixAgo = $.timeago.settings.strings.suffixAgo;
+				const prefixAgo = $.timeago.settings.strings.prefixAgo;
+				const suffixFromNow = $.timeago.settings.strings.suffixFromNow;
+				const prefixFromNow = $.timeago.settings.strings.prefixFromNow;
 
-					$.timeago.settings.strings.suffixAgo = '';
-					$.timeago.settings.strings.prefixAgo = '';
-					$.timeago.settings.strings.suffixFromNow = '';
-					$.timeago.settings.strings.prefixFromNow = '';
+				$.timeago.settings.strings.suffixAgo = '';
+				$.timeago.settings.strings.prefixAgo = '';
+				$.timeago.settings.strings.suffixFromNow = '';
+				$.timeago.settings.strings.prefixFromNow = '';
 
-					const translationText = (diff > 0 ? '[[topic:timeago_later,' : '[[topic:timeago_earlier,') + $.timeago.inWords(diff) + ']]';
+				const translationText = (diff > 0 ? '[[topic:timeago_later,' : '[[topic:timeago_earlier,') + $.timeago.inWords(diff) + ']]';
 
-					$.timeago.settings.strings.suffixAgo = suffixAgo;
-					$.timeago.settings.strings.prefixAgo = prefixAgo;
-					$.timeago.settings.strings.suffixFromNow = suffixFromNow;
-					$.timeago.settings.strings.prefixFromNow = prefixFromNow;
-					app.parseAndTranslate('partials/topic/necro-post', { text: translationText }, function (html) {
-						html.insertBefore(post);
-						resolve();
-					});
-				} else {
-					resolve();
-				}
-			});
-		})).then(function () {
-			if (typeof callback === 'function') {
-				callback();
+				$.timeago.settings.strings.suffixAgo = suffixAgo;
+				$.timeago.settings.strings.prefixAgo = prefixAgo;
+				$.timeago.settings.strings.suffixFromNow = suffixFromNow;
+				$.timeago.settings.strings.prefixFromNow = prefixFromNow;
+				app.parseAndTranslate('partials/topic/necro-post', { text: translationText }, function (html) {
+					html.attr('data-necro-post-index', prev.attr('data-index'));
+					html.insertBefore(post);
+				});
 			}
+		});
+	}
+
+	function removeNecroPostMessages(removedPostEls) {
+		removedPostEls.each((index, el) => {
+			$(`[data-necro-post-index="${$(el).attr('data-index')}"]`).remove();
 		});
 	}
 

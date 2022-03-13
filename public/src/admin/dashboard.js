@@ -1,18 +1,20 @@
 'use strict';
 
 
-define('admin/dashboard', ['Chart', 'translator', 'benchpress', 'bootbox'], function (Chart, translator, Benchpress, bootbox) {
-	const	Admin = {};
-	const	intervals = {
+define('admin/dashboard', [
+	'Chart', 'translator', 'benchpress', 'bootbox', 'alerts',
+], function (Chart, translator, Benchpress, bootbox, alerts) {
+	const Admin = {};
+	const intervals = {
 		rooms: false,
 		graphs: false,
 	};
 	let isMobile = false;
-	const	graphData = {
+	const graphData = {
 		rooms: {},
 		traffic: {},
 	};
-	const	currentGraph = {
+	const currentGraph = {
 		units: 'hours',
 		until: undefined,
 	};
@@ -23,7 +25,7 @@ define('admin/dashboard', ['Chart', 'translator', 'benchpress', 'bootbox'], func
 		realtimeInterval: 1500,
 	};
 
-	const	usedTopicColors = [];
+	const usedTopicColors = [];
 
 	$(window).on('action:ajaxify.start', function () {
 		clearInterval(intervals.rooms);
@@ -53,7 +55,7 @@ define('admin/dashboard', ['Chart', 'translator', 'benchpress', 'bootbox'], func
 
 	Admin.updateRoomUsage = function (err, data) {
 		if (err) {
-			return app.alertError(err.message);
+			return alerts.error(err);
 		}
 
 		if (JSON.stringify(graphData.rooms) === JSON.stringify(data)) {
@@ -425,7 +427,7 @@ define('admin/dashboard', ['Chart', 'translator', 'benchpress', 'bootbox'], func
 			amount: amount,
 		}, function (err, data) {
 			if (err) {
-				return app.alertError(err.message);
+				return alerts.error(err);
 			}
 			if (JSON.stringify(graphData.traffic) === JSON.stringify(data)) {
 				return;
@@ -520,7 +522,7 @@ define('admin/dashboard', ['Chart', 'translator', 'benchpress', 'bootbox'], func
 			let html = '';
 			topics.forEach(function (t, i) {
 				const link = t.tid ? '<a title="' + t.title + '"href="' + config.relative_path + '/topic/' + t.tid + '" target="_blank"> ' + t.title + '</a>' : t.title;
-				const	label = t.count === '0' ? t.title : link;
+				const label = t.count === '0' ? t.title : link;
 
 				html += '<li>' +
 					'<div style="background-color: ' + topicColors[i] + ';"></div>' +

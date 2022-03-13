@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "Чат с",
-    "chat.placeholder": "Введите сообщение, нажмите Enter для отправки",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "Вы просматриваете старые сообщения, щелкните здесь, чтобы перейти к последнему сообщению.",
     "chat.send": "Отправить",
     "chat.no_active": "У вас нет активных чатов.",
@@ -68,6 +68,8 @@
     "bootbox.ok": "ОК",
     "bootbox.cancel": "Отмена",
     "bootbox.confirm": "Подтвердить",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "Позиционирование обложки",
     "cover.dragging_message": "Перетащите обложку на желаемое место и нажмите \"Сохранить\"",
     "cover.saved": "Обложка и её расположение сохранены",

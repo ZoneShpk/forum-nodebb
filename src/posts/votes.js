@@ -206,7 +206,7 @@ module.exports = function (Posts) {
 		let current = voteStatus.upvoted ? 'upvote' : 'downvote';
 		if (unvote) { // e.g. unvoting, removing a upvote or downvote
 			hook = 'unvote';
-		} else {	// e.g. User *has not* voted, clicks upvote or downvote
+		} else { // e.g. User *has not* voted, clicks upvote or downvote
 			current = 'unvote';
 		}
 		// action:post.upvote
@@ -258,7 +258,7 @@ module.exports = function (Posts) {
 		const topicData = await topics.getTopicFields(postData.tid, ['mainPid', 'cid', 'pinned']);
 
 		if (postData.uid) {
-			if (postData.votes > 0) {
+			if (postData.votes !== 0) {
 				await db.sortedSetAdd(`cid:${topicData.cid}:uid:${postData.uid}:pids:votes`, postData.votes, postData.pid);
 			} else {
 				await db.sortedSetRemove(`cid:${topicData.cid}:uid:${postData.uid}:pids:votes`, postData.pid);

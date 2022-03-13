@@ -2,9 +2,7 @@
 
 (function (factory) {
 	if (typeof module === 'object' && module.exports) {
-		const winston = require('winston');
-
-		module.exports = factory(require('xregexp'), winston);
+		module.exports = factory();
 
 		process.profile = function (operation, start) {
 			console.log('%s took %d milliseconds', operation, process.elapsedTimeSince(start));
@@ -15,14 +13,12 @@
 			return (diff[0] * 1e3) + (diff[1] / 1e6);
 		};
 	} else {
-		window.utils = factory(window.XRegExp, console);
+		window.utils = factory();
 	}
 	// eslint-disable-next-line
-}(function (XRegExp, console) {
-	const freeze = Object.freeze || function (obj) { return obj; };
-
+}(function () {
 	// add default escape function for escaping HTML entities
-	const escapeCharMap = freeze({
+	const escapeCharMap = Object.freeze({
 		'&': '&amp;',
 		'<': '&lt;',
 		'>': '&gt;',
@@ -36,7 +32,7 @@
 	}
 	const escapeChars = /[&<>"'`=]/g;
 
-	const HTMLEntities = freeze({
+	const HTMLEntities = Object.freeze({
 		amp: '&',
 		gt: '>',
 		lt: '<',
@@ -338,7 +334,7 @@
 			tag = tag.trim().toLowerCase();
 			// see https://github.com/NodeBB/NodeBB/issues/4378
 			tag = tag.replace(/\u202E/gi, '');
-			tag = tag.replace(/[,/#!$%^*;:{}=_`<>'"~()?|]/g, '');
+			tag = tag.replace(/[,/#!$^*;:{}=_`<>'"~()?|]/g, '');
 			tag = tag.substr(0, maxLength || 15).trim();
 			const matches = tag.match(/^[.-]*(.+?)[.-]*$/);
 			if (matches && matches.length > 1) {
@@ -380,7 +376,7 @@
 				'pt-BR': 'pt-br',
 				nb: 'no',
 			};
-			return mapping[userLang] || userLang;
+			return mapping.hasOwnProperty(userLang) ? mapping[userLang] : userLang;
 		},
 		// shallow objects merge
 		merge: function () {
@@ -432,7 +428,7 @@
 		},
 
 		extensionToMimeType: function (extension) {
-			return utils.extensionMimeTypeMap[extension] || '*';
+			return utils.extensionMimeTypeMap.hasOwnProperty(extension) ? utils.extensionMimeTypeMap[extension] : '*';
 		},
 
 		isPromise: function (object) {
@@ -649,10 +645,10 @@
 
 			params.forEach(function (param) {
 				const val = param.split('=');
-				let key = decodeURI(val[0]);
+				let key = decodeURIComponent(val[0]);
 				const value = (
 					options.disableToType ||
-					options.skipToType[key] ? decodeURI(val[1]) : utils.toType(decodeURI(val[1]))
+					options.skipToType[key] ? decodeURIComponent(val[1]) : utils.toType(decodeURIComponent(val[1]))
 				);
 
 				if (key) {
@@ -662,7 +658,7 @@
 					if (!hash[key]) {
 						hash[key] = value;
 					} else {
-						if (!$.isArray(hash[key])) {
+						if (!Array.isArray(hash[key])) {
 							hash[key] = [hash[key]];
 						}
 						hash[key].push(value);
@@ -737,7 +733,7 @@
 		},
 
 		isInternalURI: function (targetLocation, referenceLocation, relative_path) {
-			return targetLocation.host === '' ||	// Relative paths are always internal links
+			return targetLocation.host === '' || // Relative paths are always internal links
 				(
 					targetLocation.host === referenceLocation.host &&
 					// Otherwise need to check if protocol and host match

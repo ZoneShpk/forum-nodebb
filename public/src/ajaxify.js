@@ -140,7 +140,7 @@ ajaxify = window.ajaxify || {};
 
 		if (data) {
 			let status = parseInt(data.status, 10);
-			if (status === 403 || status === 404 || status === 500 || status === 502 || status === 503) {
+			if ([400, 403, 404, 500, 502, 504].includes(status)) {
 				if (status === 502 && retry) {
 					retry = false;
 					ajaxifyTimer = undefined;
@@ -156,7 +156,9 @@ ajaxify = window.ajaxify || {};
 				$('#footer, #content').removeClass('hide').addClass('ajaxifying');
 				return renderTemplate(url, status.toString(), data.responseJSON || {}, callback);
 			} else if (status === 401) {
-				app.alertError('[[global:please_log_in]]');
+				require(['alerts'], function (alerts) {
+					alerts.error('[[global:please_log_in]]');
+				});
 				app.previousUrl = url;
 				window.location.href = config.relative_path + '/login';
 			} else if (status === 302 || status === 308) {
@@ -174,7 +176,9 @@ ajaxify = window.ajaxify || {};
 				}
 			}
 		} else if (textStatus !== 'abort') {
-			app.alertError(data.responseJSON.error);
+			require(['alerts'], function (alerts) {
+				alerts.error(data.responseJSON.error);
+			});
 		}
 	}
 
@@ -340,7 +344,7 @@ ajaxify = window.ajaxify || {};
 			// Require and parse modules
 			let outstanding = data.scripts.length;
 
-			data.scripts.map(function (script) {
+			const scripts = data.scripts.map(function (script) {
 				if (typeof script === 'function') {
 					return function (next) {
 						script();
@@ -365,14 +369,20 @@ ajaxify = window.ajaxify || {};
 					};
 				}
 				return null;
-			}).filter(Boolean).forEach(function (fn) {
-				fn(function () {
-					outstanding -= 1;
-					if (outstanding === 0) {
-						callback();
-					}
+			}).filter(Boolean);
+
+			if (scripts.length) {
+				scripts.forEach(function (fn) {
+					fn(function () {
+						outstanding -= 1;
+						if (outstanding === 0) {
+							callback();
+						}
+					});
 				});
-			});
+			} else {
+				callback();
+			}
 		});
 	};
 
@@ -424,7 +434,7 @@ ajaxify = window.ajaxify || {};
 	};
 
 	ajaxify.loadTemplate = function (template, callback) {
-		require([config.assetBaseUrl + '/templates/' + template + '.js'], callback, function (err) {
+		require([config.asset_base_url + '/templates/' + template + '.js'], callback, function (err) {
 			console.error('Unable to load template: ' + template);
 			throw err;
 		});
@@ -536,7 +546,7 @@ $(document).ready(function () {
 			}
 
 			// eslint-disable-next-line no-script-url
-			if (hrefEmpty(this.href) ||	this.protocol === 'javascript:' || href === '#' || href === '') {
+			if (hrefEmpty(this.href) || this.protocol === 'javascript:' || href === '#' || href === '') {
 				return e.preventDefault();
 			}
 

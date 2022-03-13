@@ -89,9 +89,9 @@ async function onConnect(socket) {
 	} catch (e) {
 		if (e.message === '[[error:invalid-session]]') {
 			socket.emit('event:invalid_session');
-			return;
 		}
-		throw e;
+
+		return;
 	}
 
 	if (socket.uid) {
@@ -171,9 +171,10 @@ async function onMessage(socket, payload) {
 }
 
 function requireModules() {
-	const modules = ['admin', 'categories', 'groups', 'meta', 'modules',
-		'notifications', 'plugins', 'posts', 'topics', 'user', 'blacklist',
-		'flags', 'uploads',
+	const modules = [
+		'admin', 'categories', 'groups', 'meta', 'modules',
+		'notifications', 'plugins', 'posts', 'topics', 'user',
+		'blacklist', 'uploads',
 	];
 
 	modules.forEach((module) => {
@@ -207,12 +208,12 @@ async function validateSession(socket, errorMsg) {
 	if (!sessionData) {
 		throw new Error(errorMsg);
 	}
-	const result = await plugins.hooks.fire('static:sockets.validateSession', {
+
+	await plugins.hooks.fire('static:sockets.validateSession', {
 		req: req,
 		socket: socket,
 		session: sessionData,
 	});
-	return result;
 }
 
 const cookieParserAsync = util.promisify((req, callback) => cookieParser(req, {}, err => callback(err)));

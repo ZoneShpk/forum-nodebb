@@ -78,7 +78,7 @@ helpers.getUserDataByUserSlug = async function (userslug, callerUID, query = {})
 	userData.isSelf = isSelf;
 	userData.isFollowing = results.isFollowing;
 	userData.hasPrivateChat = results.hasPrivateChat;
-	userData.showHidden = results.canEdit;	// remove in v1.19.0
+	userData.showHidden = results.canEdit; // remove in v1.19.0
 	userData.groups = Array.isArray(results.groups) && results.groups.length ? results.groups[0] : [];
 	userData.disableSignatures = meta.config.disableSignatures === 1;
 	userData['reputation:disabled'] = meta.config['reputation:disabled'] === 1;
@@ -155,7 +155,8 @@ async function getCounts(userData, callerUID) {
 	const cids = await categories.getCidsByPrivilege('categories:cid', callerUID, 'topics:read');
 	const promises = {
 		posts: db.sortedSetsCardSum(cids.map(c => `cid:${c}:uid:${uid}:pids`)),
-		best: db.sortedSetsCardSum(cids.map(c => `cid:${c}:uid:${uid}:pids:votes`)),
+		best: Promise.all(cids.map(async c => db.sortedSetCount(`cid:${c}:uid:${uid}:pids:votes`, 1, '+inf'))),
+		controversial: Promise.all(cids.map(async c => db.sortedSetCount(`cid:${c}:uid:${uid}:pids:votes`, '-inf', -1))),
 		topics: db.sortedSetsCardSum(cids.map(c => `cid:${c}:uid:${uid}:tids`)),
 	};
 	if (userData.isAdmin || userData.isSelf) {
@@ -169,6 +170,8 @@ async function getCounts(userData, callerUID) {
 		promises.blocks = user.getUserField(userData.uid, 'blocksCount');
 	}
 	const counts = await utils.promiseParallel(promises);
+	counts.best = counts.best.reduce((sum, count) => sum + count, 0);
+	counts.controversial = counts.controversial.reduce((sum, count) => sum + count, 0);
 	counts.categoriesWatched = counts.categoriesWatched && counts.categoriesWatched.length;
 	counts.groups = userData.groups.length;
 	counts.following = userData.followingCount;

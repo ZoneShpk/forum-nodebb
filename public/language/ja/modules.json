@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "とチャット",
-    "chat.placeholder": "メッセージを入力し、Enterで送信",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "You are looking at older messages, click here to go to most recent message.",
     "chat.send": "送信",
     "chat.no_active": "チャットはありません。",
@@ -68,6 +68,8 @@
     "bootbox.ok": "OK",
     "bootbox.cancel": "キャンセル",
     "bootbox.confirm": "確認",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "カバー写真の配置について",
     "cover.dragging_message": "カバー写真をドラッグで目的位置に移動し、\"保存\"をクリックします。",
     "cover.saved": "カバー写真と配置設定を保存しました。",

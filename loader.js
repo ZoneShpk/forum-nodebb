@@ -48,7 +48,7 @@ Loader.init = function () {
 
 Loader.displayStartupMessages = function () {
 	console.log('');
-	console.log(`NodeBB v${pkg.version} Copyright (C) 2013-2014 NodeBB Inc.`);
+	console.log(`NodeBB v${pkg.version} Copyright (C) 2013-${(new Date()).getFullYear()} NodeBB Inc.`);
 	console.log('This program comes with ABSOLUTELY NO WARRANTY.');
 	console.log('This is free software, and you are welcome to redistribute it under certain conditions.');
 	console.log('For the full license, please visit: http://www.gnu.org/copyleft/gpl.html');
@@ -208,12 +208,25 @@ fs.open(pathToConfig, 'r', (err) => {
 
 	if (nconf.get('daemon') !== 'false' && nconf.get('daemon') !== false) {
 		if (file.existsSync(pidFilePath)) {
+			let pid = 0;
 			try {
-				const	pid = fs.readFileSync(pidFilePath, { encoding: 'utf-8' });
-				process.kill(pid, 0);
-				process.exit();
-			} catch (e) {
-				fs.unlinkSync(pidFilePath);
+				pid = fs.readFileSync(pidFilePath, { encoding: 'utf-8' });
+				if (pid) {
+					process.kill(pid, 0);
+					console.info(`Process "${pid}" from pidfile already running, exiting`);
+					process.exit();
+				} else {
+					console.info(`Invalid pid "${pid}" from pidfile, deleting pidfile`);
+					fs.unlinkSync(pidFilePath);
+				}
+			} catch (err) {
+				if (err.code === 'ESRCH') {
+					console.info(`Process "${pid}" from pidfile not found, deleting pidfile`);
+					fs.unlinkSync(pidFilePath);
+				} else {
+					console.error(err.stack);
+					throw err;
+				}
 			}
 		}
 

@@ -31,6 +31,9 @@ const relative_path = nconf.get('relative_path');
 middleware.buildHeader = helpers.try(async (req, res, next) => {
 	res.locals.renderHeader = true;
 	res.locals.isAPI = false;
+	if (req.method === 'GET') {
+		await require('./index').applyCSRFasync(req, res);
+	}
 	const [config, canLoginIfBanned] = await Promise.all([
 		controllers.api.loadConfig(req),
 		user.bans.canLoginIfBanned(req.uid),
@@ -61,6 +64,7 @@ middleware.renderHeader = async function renderHeader(req, res, data) {
 		'brand:logo:display': meta.config['brand:logo'] ? '' : 'hide',
 		allowRegistration: registrationType === 'normal',
 		searchEnabled: plugins.hooks.hasListeners('filter:search.query'),
+		postQueueEnabled: !!meta.config.postQueue,
 		config: res.locals.config,
 		relative_path,
 		bodyClass: data.bodyClass,
@@ -179,6 +183,8 @@ async function appendUnreadCounts({ uid, navigation, unreadData, query }) {
 		newTopic: unreadCounts.new || 0,
 		watchedTopic: unreadCounts.watched || 0,
 		unrepliedTopic: unreadCounts.unreplied || 0,
+		mobileUnread: 0,
+		unreadUrl: '/unread',
 		chat: results.unreadChatCount || 0,
 		notification: results.unreadNotificationCount || 0,
 		flags: results.unreadFlagCount || 0,
@@ -196,6 +202,8 @@ async function appendUnreadCounts({ uid, navigation, unreadData, query }) {
 			if (item && item.originalRoute === route) {
 				unreadData[filter] = _.zipObject(tidsByFilter[filter], tidsByFilter[filter].map(() => true));
 				item.content = content;
+				unreadCount.mobileUnread = content;
+				unreadCount.unreadUrl = route;
 				if (unreadCounts[filter] > 0) {
 					item.iconClass += ' unread-count';
 				}

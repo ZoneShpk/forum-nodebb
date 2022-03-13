@@ -1,6 +1,6 @@
 'use strict';
 
-define('search', ['translator', 'storage', 'hooks'], function (translator, storage, hooks) {
+define('search', ['translator', 'storage', 'hooks', 'alerts'], function (translator, storage, hooks, alerts) {
 	const Search = {
 		current: {},
 	};
@@ -45,7 +45,7 @@ define('search', ['translator', 'storage', 'hooks'], function (translator, stora
 
 		searchButton.off('click').on('click', function (e) {
 			if (!config.loggedIn && !app.user.privileges['search:content']) {
-				app.alert({
+				alerts.alert({
 					message: '[[error:search-requires-login]]',
 					timeout: 3000,
 				});
@@ -113,7 +113,7 @@ define('search', ['translator', 'storage', 'hooks'], function (translator, stora
 			options.searchOptions.searchOnly = 1;
 			Search.api(options.searchOptions, function (data) {
 				quickSearchResults.find('.loading-indicator').addClass('hidden');
-				if (options.hideOnNoMatches && !data.posts.length) {
+				if (!data.posts || (options.hideOnNoMatches && !data.posts.length)) {
 					return quickSearchResults.addClass('hidden').find('.quick-search-results-container').html('');
 				}
 				data.posts.forEach(function (p) {
@@ -237,7 +237,7 @@ define('search', ['translator', 'storage', 'hooks'], function (translator, stora
 		try {
 			term = encodeURIComponent(term);
 		} catch (e) {
-			return app.alertError('[[error:invalid-search-term]]');
+			return alerts.error('[[error:invalid-search-term]]');
 		}
 
 		const query = {

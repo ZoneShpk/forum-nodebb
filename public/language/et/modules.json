@@ -1,6 +1,6 @@
 {
     "chat.chatting_with": "Chat with",
-    "chat.placeholder": "Kirjuta sõnum siia ning vajuta enterit sõnumi saatmiseks",
+    "chat.placeholder": "Type chat message here, drag & drop images, press enter to send",
     "chat.scroll-up-alert": "You are looking at older messages, click here to go to most recent message.",
     "chat.send": "Saada",
     "chat.no_active": "Sul ei ole hetkel aktiivseid vestlusi.",
@@ -68,6 +68,8 @@
     "bootbox.ok": "Olgu",
     "bootbox.cancel": "Katkesta",
     "bootbox.confirm": "Kinnita",
+    "bootbox.submit": "Submit",
+    "bootbox.send": "Send",
     "cover.dragging_title": "Kaanefoto Positsioneerimine",
     "cover.dragging_message": "Vea kaanefoto soovitud kohta ja klikka \"Salvesta\"",
     "cover.saved": "Kaanefoto ja paiknemine salvestatud",

@@ -30,7 +30,7 @@ questions.main = [
 	{
 		name: 'submitPluginUsage',
 		description: 'Would you like to submit anonymous plugin usage to nbbpm?',
-		default: 'yes',
+		default: 'no',
 	},
 	{
 		name: 'database',
@@ -82,6 +82,73 @@ function checkSetupFlag() {
 		install.values.database = nconf.get('database');
 	}
 }
+
+function checkSetupFlagEnv() {
+	let setupVal = install.values || {};
+
+	const envConfMap = {
+		NODEBB_URL: 'url',
+		NODEBB_PORT: 'port',
+		NODEDB_SECRET: 'secret',
+		NODEBB_ADMIN_USERNAME: 'admin:username',
+		NODEBB_ADMIN_PASSWORD: 'admin:password',
+		NODEBB_ADMIN_PASSWORD_CONFIRM: 'admin:password:confirm',
+		NODEBB_ADMIN_EMAIL: 'admin:email',
+		NODEBB_DATABASE: 'database',
+		NODEBB_MONGO_URI: 'mongo:uri',
+	};
+
+	// Set setup values from env vars (if set)
+	winston.info('[install/checkSetupFlagEnv] checking env vars for setup info...');
+
+	Object.entries(process.env).forEach(([evName, evValue]) => { // get setup values from env
+		if (evName.startsWith('NODEBB_DB_')) {
+			setupVal[`${process.env.NODEBB_DB}:${envConfMap[evName]}`] = evValue;
+		} else if (evName.startsWith('NODEBB_')) {
+			setupVal[envConfMap[evName]] = evValue;
+		}
+	});
+
+	setupVal['admin:password:confirm'] = setupVal['admin:password'];
+
+	// try to get setup values from json, if successful this overwrites all values set by env
+	// TODO: better behaviour would be to support overrides per value, i.e. in order of priority (generic pattern):
+	//       flag, env, config file, default
+	try {
+		if (nconf.get('setup')) {
+			const setupJSON = JSON.parse(nconf.get('setup'));
+			setupVal = { ...setupVal, ...setupJSON };
+		}
+	} catch (err) {
+		winston.error('[install/checkSetupFlagEnv] invalid json in nconf.get(\'setup\'), ignoring setup values from json');
+	}
+
+	if (setupVal && typeof setupVal === 'object') {
+		if (setupVal['admin:username'] && setupVal['admin:password'] && setupVal['admin:password:confirm'] && setupVal['admin:email']) {
+			install.values = setupVal;
+		} else {
+			winston.error('[install/checkSetupFlagEnv] required values are missing for automated setup:');
+			if (!setupVal['admin:username']) {
+				winston.error('  admin:username');
+			}
+			if (!setupVal['admin:password']) {
+				winston.error('  admin:password');
+			}
+			if (!setupVal['admin:password:confirm']) {
+				winston.error('  admin:password:confirm');
+			}
+			if (!setupVal['admin:email']) {
+				winston.error('  admin:email');
+			}
+
+			process.exit();
+		}
+	} else if (nconf.get('database')) {
+		install.values = install.values || {};
+		install.values.database = nconf.get('database');
+	}
+}
+
 
 function checkCIFlag() {
 	let ciVals;
@@ -214,7 +281,7 @@ async function enableDefaultTheme() {
 		return;
 	}
 
-	const defaultTheme = nconf.get('defaultTheme') || 'nodebb-theme-persona';
+	const defaultTheme = nconf.get('defaultTheme') || 'nodebb-theme-timuu';
 	console.log(`Enabling default theme: ${defaultTheme}`);
 	await meta.themes.set({
 		type: 'local',
@@ -408,7 +475,7 @@ async function createWelcomePost() {
 		await Topics.post({
 			uid: 1,
 			cid: 2,
-			title: 'Welcome to your NodeBB!',
+			title: 'Welcome to ViAl community!',
 			content: content,
 		});
 	}
@@ -423,8 +490,14 @@ async function enableDefaultPlugins() {
 		'nodebb-plugin-mentions',
 		'nodebb-widget-essentials',
 		'nodebb-rewards-essentials',
+		'nodebb-plugin-emailer-sendgrid',
 		'nodebb-plugin-emoji',
 		'nodebb-plugin-emoji-android',
+		'nodebb-plugin-embed',
+		'nodebb-plugin-share-post-icons',
+		'nodebb-plugin-s3-uploads-digitalocean',
+		'nodebb-plugin-sso-facebook',
+		'nodebb-plugin-sso-google'
 	];
 	let customDefaults = nconf.get('defaultplugins') || nconf.get('defaultPlugins');
 
@@ -492,7 +565,8 @@ async function checkUpgrade() {
 
 install.setup = async function () {
 	try {
-		checkSetupFlag();
+		//checkSetupFlag();
+		checkSetupFlagEnv();
 		checkCIFlag();
 		await setupConfig();
 		await setupDefaultConfigs();
@@ -527,7 +601,16 @@ install.save = async function (server_conf) {
 		serverConfigPath = path.resolve(__dirname, '../', nconf.get('config'));
 	}
 
-	await fs.promises.writeFile(serverConfigPath, JSON.stringify(server_conf, null, 4));
+	let currentConfig = {};
+	try {
+		currentConfig = require(serverConfigPath);
+	} catch (err) {
+		if (err.code !== 'MODULE_NOT_FOUND') {
+			throw err;
+		}
+	}
+
+	await fs.promises.writeFile(serverConfigPath, JSON.stringify({ ...currentConfig, ...server_conf }, null, 4));
 	console.log('Configuration Saved OK');
 	nconf.file({
 		file: serverConfigPath,
